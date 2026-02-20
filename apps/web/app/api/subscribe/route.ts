@@ -1,39 +1,26 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/subscribe — captures subscriber emails to data/subscribers.json
+// POST /api/subscribe — persists subscriber emails to Supabase Postgres
 //
-// ⚠️  VERCEL NOTE: The filesystem is read-only in Vercel serverless functions,
-// so writes to data/subscribers.json will NOT persist between deployments or
-// invocations. Before shipping the digest feature, replace this with a proper
-// store — Vercel Postgres, Vercel KV, Supabase, or a service like Resend
-// (which has a built-in audience/contact list).
+// Requires this table in Supabase (run once in the SQL editor):
 //
-// TODO: Wire up Resend / SendGrid / Loops for actual email sending.
+//   CREATE TABLE IF NOT EXISTS subscribers (
+//     id         BIGSERIAL PRIMARY KEY,
+//     email      TEXT UNIQUE NOT NULL,
+//     subscribed_at TIMESTAMPTZ DEFAULT NOW()
+//   );
+//   ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
+//   CREATE POLICY "public insert" ON subscribers FOR INSERT WITH CHECK (true);
+//
+// TODO: Wire up Resend/SendGrid for the actual weekly digest emails.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { NextRequest, NextResponse } from "next/server"
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs"
-import { join, dirname } from "path"
+import { createClient } from "@supabase/supabase-js"
 
-const DB_PATH = join(process.cwd(), "data", "subscribers.json")
-
-type Subscriber = {
-  email: string
-  subscribed_at: string
-}
-
-function readSubscribers(): Subscriber[] {
-  if (!existsSync(DB_PATH)) return []
-  try {
-    return JSON.parse(readFileSync(DB_PATH, "utf8"))
-  } catch {
-    return []
-  }
-}
-
-function writeSubscribers(subscribers: Subscriber[]) {
-  mkdirSync(dirname(DB_PATH), { recursive: true })
-  writeFileSync(DB_PATH, JSON.stringify(subscribers, null, 2))
-}
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_ANON_KEY!
+)
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -53,14 +40,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 })
   }
 
-  const subscribers = readSubscribers()
+  const { error } = await supabase.from("subscribers").insert({ email })
 
-  if (subscribers.some((s) => s.email === email)) {
-    return NextResponse.json({ message: "already subscribed" }, { status: 200 })
+  if (error) {
+    // Postgres unique violation
+    if (error.code === "23505") {
+      return NextResponse.json({ message: "already subscribed" }, { status: 200 })
+    }
+    console.error("Subscribe error:", error)
+    return NextResponse.json({ error: "Something went wrong." }, { status: 500 })
   }
-
-  subscribers.push({ email, subscribed_at: new Date().toISOString() })
-  writeSubscribers(subscribers)
 
   return NextResponse.json({ message: "subscribed" }, { status: 201 })
 }
