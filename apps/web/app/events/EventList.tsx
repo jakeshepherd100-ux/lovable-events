@@ -1,55 +1,43 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import type { Event } from "@/data/events"
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Filters = {
-  sanDiego: boolean
-  online: boolean
-  ai: boolean
-  startups: boolean
-}
+import type { SupabaseEvent } from "@/lib/events"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIES = ["All", "AI / ML", "Startup", "Web3", "Design", "Networking", "Workshops", "Developer Tools"]
 const DATE_OPTIONS = ["All Dates", "This Week", "This Month", "Next Month"]
 
-const SOURCE_NAMES: Record<string, string> = {
-  "meetup.com": "Meetup",
-  "eventbrite.com": "Eventbrite",
-  "lu.ma": "Luma",
-  "developers.google.com": "Google Developers",
-  "ycombinator.com": "Y Combinator",
-  "startupsd.org": "Startup SD",
-  "evonexus.org": "EvoNexus",
+const SOURCE_LABELS: Record<string, string> = {
+  eventbrite: "Eventbrite",
+  meetup: "Meetup",
+  luma: "Luma",
+  manual: "Direct",
+  scraper: "SD Tech Scene",
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getSourceName(url: string): string {
-  try {
-    const hostname = new URL(url).hostname.replace(/^www\./, "")
-    return SOURCE_NAMES[hostname] ?? hostname
-  } catch {
-    return url
-  }
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
 }
 
-function matchesCategory(e: Event, cat: string): boolean {
-  switch (cat) {
-    case "All":      return true
-    case "AI / ML":  return e.tags.includes("AI")
-    case "Startup":  return e.tags.includes("Startups")
-    default:         return false
-  }
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
 }
 
-function isInDateRange(dateStr: string, filter: string): boolean {
+function getSourceLabel(e: SupabaseEvent): string {
+  return SOURCE_LABELS[e.source] ?? e.source
+}
+
+function matchesCategory(e: SupabaseEvent, cat: string): boolean {
+  if (cat === "All") return true
+  return e.category === cat
+}
+
+function isInDateRange(iso: string, filter: string): boolean {
   if (filter === "All Dates") return true
-  const event = new Date(dateStr)
+  const event = new Date(iso)
   const now = new Date()
   const y = now.getFullYear()
   const m = now.getMonth()
@@ -102,32 +90,35 @@ function ToggleButton({ label, on, onClick }: { label: string; on: boolean; onCl
   )
 }
 
-function CardContent({ e }: { e: Event }) {
+function CardContent({ e }: { e: SupabaseEvent }) {
+  const badges = e.tags?.length ? e.tags : e.category ? [e.category] : []
+
   return (
     <>
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="font-serif text-ps-heading text-lg font-semibold">{e.title}</div>
           <div className="text-sm text-ps-muted mt-0.5">
-            {e.date} · {e.time}
+            {formatDate(e.start_date)} · {formatTime(e.start_date)}
           </div>
           <div className="text-sm text-ps-muted">
-            {e.isOnline ? "Online" : e.city} · {e.organizer}
+            {e.is_online ? "Online" : (e.location ?? "San Diego")} · {e.organizer_name ?? ""}
           </div>
         </div>
         <div className="flex flex-wrap gap-1 justify-end shrink-0">
-          {e.tags.map((t) => (
+          {badges.map((t) => (
             <span key={t} className="bg-ps-accent text-white text-xs font-medium rounded-full px-3 py-0.5">
               {t}
             </span>
           ))}
         </div>
       </div>
-      <div className="mt-3 pt-3 border-t border-ps-border">
-        {e.url ? (
-          <span className="text-ps-muted text-xs">via {getSourceName(e.url)} ↗</span>
-        ) : (
-          <span className="text-ps-muted text-xs italic">Details coming soon</span>
+      <div className="mt-3 pt-3 border-t border-ps-border flex items-center justify-between">
+        <span className="text-ps-muted text-xs">
+          via {getSourceLabel(e)} ↗
+        </span>
+        {e.price_label && (
+          <span className="text-ps-muted text-xs">{e.price_label}</span>
         )}
       </div>
     </>
@@ -136,20 +127,24 @@ function CardContent({ e }: { e: Event }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function EventList({ events }: { events: Event[] }) {
-  // Existing location/tag toggles
-  const [filters, setFilters] = useState<Filters>({
+type LocationFilters = {
+  sanDiego: boolean
+  online: boolean
+  ai: boolean
+  startups: boolean
+}
+
+export default function EventList({ events }: { events: SupabaseEvent[] }) {
+  const [filters, setFilters] = useState<LocationFilters>({
     sanDiego: false,
     online: false,
     ai: false,
     startups: false,
   })
-
-  // New category + date filters
   const [category, setCategory] = useState("All")
   const [dateFilter, setDateFilter] = useState("All Dates")
 
-  const toggle = (key: keyof Filters) =>
+  const toggle = (key: keyof LocationFilters) =>
     setFilters((prev) => ({ ...prev, [key]: !prev[key] }))
 
   function resetAll() {
@@ -160,59 +155,46 @@ export default function EventList({ events }: { events: Event[] }) {
 
   const filtered = useMemo(() => {
     return events.filter((e) => {
-      // Existing toggles
-      if (filters.sanDiego && e.city !== "San Diego") return false
-      if (filters.online && !e.isOnline) return false
-      if (filters.ai && !e.tags.includes("AI")) return false
-      if (filters.startups && !e.tags.includes("Startups")) return false
-      // New filters
+      // Location/type toggles
+      if (filters.sanDiego && !e.location?.toLowerCase().includes("san diego")) return false
+      if (filters.online && !e.is_online) return false
+      if (filters.ai && e.category !== "AI / ML" && !e.tags?.includes("AI")) return false
+      if (filters.startups && e.category !== "Startup" && !e.tags?.includes("Startups")) return false
+      // Category pill
       if (!matchesCategory(e, category)) return false
-      if (!isInDateRange(e.date, dateFilter)) return false
+      // Date range
+      if (!isInDateRange(e.start_date, dateFilter)) return false
       return true
     })
   }, [events, filters, category, dateFilter])
 
   return (
     <>
-      {/* ── Sticky filter bar ────────────────────────────────────────────── */}
-      <div className="sticky top-16 z-40 border-b border-ps-border"
-           style={{ backgroundColor: "var(--surface)" }}>
+      {/* ── Sticky filter bar ── */}
+      <div className="sticky top-16 z-40 border-b border-ps-border" style={{ backgroundColor: "var(--surface)" }}>
         <div className="max-w-3xl mx-auto px-6 py-3.5 flex items-center gap-4">
-
-          {/* Category pills — horizontally scrollable */}
-          <div className="flex gap-2 overflow-x-auto flex-1 pb-0.5"
-               style={{ scrollbarWidth: "none" }}>
+          <div className="flex gap-2 overflow-x-auto flex-1 pb-0.5" style={{ scrollbarWidth: "none" }}>
             {CATEGORIES.map((cat) => (
-              <CategoryPill
-                key={cat}
-                label={cat}
-                active={category === cat}
-                onClick={() => setCategory(cat)}
-              />
+              <CategoryPill key={cat} label={cat} active={category === cat} onClick={() => setCategory(cat)} />
             ))}
           </div>
-
-          {/* Date dropdown */}
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value)}
             className="shrink-0 px-3 py-1 rounded border text-sm border-ps-border bg-ps-surface text-ps-body focus:outline-none focus:border-ps-primary cursor-pointer"
           >
-            {DATE_OPTIONS.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
+            {DATE_OPTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
       </div>
 
-      {/* ── Events grid ──────────────────────────────────────────────────── */}
+      {/* ── Events grid ── */}
       <main className="max-w-3xl mx-auto p-6">
         <div className="flex items-baseline justify-between gap-4 flex-wrap">
           <h1 className="font-serif text-ps-heading text-3xl">Events</h1>
           <div className="text-sm text-ps-muted">{filtered.length} shown</div>
         </div>
 
-        {/* Existing location/tag toggles */}
         <div className="mt-4 flex gap-2 flex-wrap">
           <ToggleButton label="San Diego" on={filters.sanDiego} onClick={() => toggle("sanDiego")} />
           <ToggleButton label="Online"    on={filters.online}   onClick={() => toggle("online")} />
@@ -220,7 +202,6 @@ export default function EventList({ events }: { events: Event[] }) {
           <ToggleButton label="Startups"  on={filters.startups} onClick={() => toggle("startups")} />
         </div>
 
-        {/* Event cards or empty state */}
         {filtered.length === 0 ? (
           <div className="mt-16 text-center">
             <p className="font-serif italic text-ps-heading text-xl">
