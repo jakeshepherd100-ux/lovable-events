@@ -21,8 +21,10 @@ const FilterButton = ({
 }) => (
   <button
     onClick={onClick}
-    className={`px-3 py-1 rounded border text-sm ${
-      on ? "bg-sky-300 text-blue-900 border-sky-200" : "bg-blue-900 text-white border-blue-800"
+    className={`px-3 py-1 rounded border text-sm transition-colors ${
+      on
+        ? "bg-ps-primary text-white border-ps-primary"
+        : "border-ps-border text-ps-body bg-ps-surface hover:border-ps-primary hover:text-ps-primary"
     }`}
   >
     {label}
@@ -53,8 +55,8 @@ export default function EventList({ events }: { events: Event[] }) {
   return (
     <main className="max-w-3xl mx-auto p-6">
       <div className="flex items-baseline justify-between gap-4 flex-wrap">
-        <h1 className="text-3xl font-bold text-white">Events</h1>
-        <div className="text-sm text-sky-100">{filtered.length} shown</div>
+        <h1 className="font-serif text-ps-heading text-3xl">Events</h1>
+        <div className="text-sm text-ps-muted">{filtered.length} shown</div>
       </div>
 
       <div className="mt-4 flex gap-2 flex-wrap">
@@ -71,21 +73,21 @@ export default function EventList({ events }: { events: Event[] }) {
             href={e.url}
             target="_blank"
             rel="noreferrer"
-            className="block rounded-lg border border-sky-200 bg-sky-100 p-4 hover:bg-sky-200"
+            className="block bg-ps-surface border border-ps-border rounded-xl p-4 transition-all hover:-translate-y-1.5 hover:shadow-[0_20px_48px_rgba(26,47,58,0.12)]"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-lg font-semibold text-amber-800">{e.title}</div>
-                <div className="text-sm text-gray-600">
+                <div className="font-serif text-ps-heading text-lg font-semibold">{e.title}</div>
+                <div className="text-sm text-ps-muted mt-0.5">
                   {e.date} · {e.time}
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-ps-muted">
                   {e.isOnline ? "Online" : e.city} · {e.organizer}
                 </div>
               </div>
               <div className="flex flex-wrap gap-1 justify-end">
                 {e.tags.map((t) => (
-                  <span key={t} className="text-xs border rounded px-2 py-0.5">
+                  <span key={t} className="bg-ps-accent text-white text-xs font-medium rounded-full px-3 py-0.5">
                     {t}
                   </span>
                 ))}
