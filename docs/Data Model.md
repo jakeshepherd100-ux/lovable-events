@@ -2,7 +2,7 @@
 
 ## Event Type
 
-Defined in `apps/web/data/mockEvents.ts`.
+Defined in `apps/web/data/events.ts`.
 
 ```typescript
 type Event = {
@@ -18,16 +18,19 @@ type Event = {
 }
 ```
 
-## Current Mock Events
+## Current Events
 
 | # | Title | Date | Format | Organizer | Tags |
 |---|-------|------|--------|-----------|------|
-| 1 | AI Builders Meetup | March 10, 2026 · 6:00 PM | San Diego (in-person) | Startup San Diego | AI, Startups |
-| 2 | Remote AI Demo Night | March 12, 2026 · 5:00 PM | Online | Luma | AI |
-| 3 | Founder Happy Hour | March 14, 2026 · 7:00 PM | San Diego (in-person) | StartupSD | Startups |
-| 4 | AI + Startups Fireside Chat | March 18, 2026 · 12:00 PM | Online | Eventbrite | AI, Startups |
+| 1 | San Diego AI Meetup: Agents & Automation | March 5, 2026 · 6:30 PM | San Diego (in-person) | San Diego AI Meetup | AI |
+| 2 | Startup SD: Founder Demo Night | March 11, 2026 · 6:00 PM | San Diego (in-person) | Startup San Diego | Startups |
+| 3 | Build with AI — Live Workshop | March 13, 2026 · 12:00 PM | Online | Google Developer Groups | AI |
+| 4 | AI + Startups Fireside: Building Products with LLMs | March 19, 2026 · 5:00 PM | Online | Y Combinator | AI, Startups |
+| 5 | San Diego Startup Week — Opening Night | March 24, 2026 · 7:00 PM | San Diego (in-person) | Startup San Diego | Startups |
+| 6 | Practical AI for Founders | March 26, 2026 · 10:00 AM | San Diego (in-person) | EvoNexus | AI, Startups |
 
 ## Notes
 
-- There is no backend or database yet — swap `mockEvents` in `data/mockEvents.ts` to connect a real data source
+- There is no backend or database yet — edit `data/events.ts` directly to add or remove events
 - Tags are free-form strings; the filter UI hardcodes `"AI"` and `"Startups"` as filter keys
+- See the comment block at the top of `data/events.ts` for instructions on adding new events

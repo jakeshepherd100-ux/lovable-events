@@ -13,11 +13,12 @@ apps/web/
 │   ├── page.tsx            ← / route (default Next.js starter page)
 │   ├── globals.css         ← Global styles (Tailwind base)
 │   ├── events/
-│   │   └── page.tsx        ← /events route — main feature page
+│   │   ├── page.tsx        ← /events route — server component, loads data
+│   │   └── EventList.tsx   ← client component — filtering UI + event cards
 │   └── homepage/
 │       └── page.tsx        ← /homepage route — alternate landing
 ├── data/
-│   └── mockEvents.ts       ← Event type definition + mock data
+│   └── events.ts           ← Event type definition + curated event list
 └── public/
     ├── next.svg
     └── vercel.svg
@@ -26,13 +27,13 @@ apps/web/
 ## Key Patterns
 
 - **App Router** — uses Next.js `app/` directory (not `pages/`)
-- **Client components** — `/events` is `"use client"` for interactive filtering with `useState` + `useMemo`
-- **Path alias** — `@/` maps to the project root (`apps/web/`), so imports look like `@/data/mockEvents`
-- **Mock data** — no backend or database yet; all events are hardcoded in `data/mockEvents.ts`
+- **Server/client split** — `app/events/page.tsx` is a server component that reads data and passes it as props to `EventList.tsx`, which is `"use client"` and handles interactive filtering
+- **Path alias** — `@/` maps to the project root (`apps/web/`), so imports look like `@/data/events`
+- **Curated data** — no backend or database yet; all events are maintained in `data/events.ts`
 
 ## Filtering Logic
 
-The events page holds a `Filters` state object with four boolean keys. On each render, `useMemo` filters the full event list — each active filter narrows results (AND logic, not OR).
+`EventList` holds a `Filters` state object with four boolean keys. On each render, `useMemo` filters the full event list — each active filter narrows results (AND logic, not OR).
 
 ```
 filters.sanDiego  → keep only city === "San Diego"
