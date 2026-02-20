@@ -10,6 +10,28 @@ type Filters = {
   startups: boolean
 }
 
+const SOURCE_NAMES: Record<string, string> = {
+  "meetup.com": "Meetup",
+  "eventbrite.com": "Eventbrite",
+  "lu.ma": "Luma",
+  "developers.google.com": "Google Developers",
+  "ycombinator.com": "Y Combinator",
+  "startupsd.org": "Startup SD",
+  "evonexus.org": "EvoNexus",
+}
+
+function getSourceName(url: string): string {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, "")
+    return SOURCE_NAMES[hostname] ?? hostname
+  } catch {
+    return url
+  }
+}
+
+const cardBase =
+  "block bg-ps-surface border border-ps-border rounded-xl p-4 transition-all hover:-translate-y-1.5 hover:shadow-[0_20px_48px_rgba(26,47,58,0.12)]"
+
 const FilterButton = ({
   label,
   on,
@@ -30,6 +52,41 @@ const FilterButton = ({
     {label}
   </button>
 )
+
+function CardContent({ e }: { e: Event }) {
+  return (
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="font-serif text-ps-heading text-lg font-semibold">{e.title}</div>
+          <div className="text-sm text-ps-muted mt-0.5">
+            {e.date} · {e.time}
+          </div>
+          <div className="text-sm text-ps-muted">
+            {e.isOnline ? "Online" : e.city} · {e.organizer}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1 justify-end shrink-0">
+          {e.tags.map((t) => (
+            <span key={t} className="bg-ps-accent text-white text-xs font-medium rounded-full px-3 py-0.5">
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 pt-3 border-t border-ps-border">
+        {e.url ? (
+          <span className="text-ps-muted text-xs">
+            via {getSourceName(e.url)} ↗
+          </span>
+        ) : (
+          <span className="text-ps-muted text-xs italic">Details coming soon</span>
+        )}
+      </div>
+    </>
+  )
+}
 
 export default function EventList({ events }: { events: Event[] }) {
   const [filters, setFilters] = useState<Filters>({
@@ -67,34 +124,23 @@ export default function EventList({ events }: { events: Event[] }) {
       </div>
 
       <div className="mt-6 space-y-4">
-        {filtered.map((e) => (
-          <a
-            key={e.id}
-            href={e.url}
-            target="_blank"
-            rel="noreferrer"
-            className="block bg-ps-surface border border-ps-border rounded-xl p-4 transition-all hover:-translate-y-1.5 hover:shadow-[0_20px_48px_rgba(26,47,58,0.12)]"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="font-serif text-ps-heading text-lg font-semibold">{e.title}</div>
-                <div className="text-sm text-ps-muted mt-0.5">
-                  {e.date} · {e.time}
-                </div>
-                <div className="text-sm text-ps-muted">
-                  {e.isOnline ? "Online" : e.city} · {e.organizer}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-1 justify-end">
-                {e.tags.map((t) => (
-                  <span key={t} className="bg-ps-accent text-white text-xs font-medium rounded-full px-3 py-0.5">
-                    {t}
-                  </span>
-                ))}
-              </div>
+        {filtered.map((e) =>
+          e.url ? (
+            <a
+              key={e.id}
+              href={e.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${cardBase} cursor-pointer`}
+            >
+              <CardContent e={e} />
+            </a>
+          ) : (
+            <div key={e.id} className={cardBase}>
+              <CardContent e={e} />
             </div>
-          </a>
-        ))}
+          )
+        )}
       </div>
     </main>
   )
