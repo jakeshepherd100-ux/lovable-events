@@ -22,7 +22,7 @@ const FilterButton = ({
   <button
     onClick={onClick}
     className={`px-3 py-1 rounded border text-sm ${
-      on ? "bg-black text-white" : "bg-white"
+      on ? "bg-sky-300 text-blue-900 border-sky-200" : "bg-blue-900 text-white border-blue-800"
     }`}
   >
     {label}
@@ -53,8 +53,8 @@ export default function EventList({ events }: { events: Event[] }) {
   return (
     <main className="max-w-3xl mx-auto p-6">
       <div className="flex items-baseline justify-between gap-4 flex-wrap">
-        <h1 className="text-3xl font-bold">Events</h1>
-        <div className="text-sm text-gray-500">{filtered.length} shown</div>
+        <h1 className="text-3xl font-bold text-white">Events</h1>
+        <div className="text-sm text-sky-100">{filtered.length} shown</div>
       </div>
 
       <div className="mt-4 flex gap-2 flex-wrap">
@@ -71,7 +71,7 @@ export default function EventList({ events }: { events: Event[] }) {
             href={e.url}
             target="_blank"
             rel="noreferrer"
-            className="block rounded-lg border p-4 hover:bg-gray-50"
+            className="block rounded-lg border border-sky-100 bg-white p-4 hover:bg-sky-50"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
