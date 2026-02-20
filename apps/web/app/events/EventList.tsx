@@ -71,11 +71,11 @@ export default function EventList({ events }: { events: Event[] }) {
             href={e.url}
             target="_blank"
             rel="noreferrer"
-            className="block rounded-lg border border-sky-100 bg-white p-4 hover:bg-sky-50"
+            className="block rounded-lg border border-sky-200 bg-sky-100 p-4 hover:bg-sky-200"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-lg font-semibold">{e.title}</div>
+                <div className="text-lg font-semibold text-amber-800">{e.title}</div>
                 <div className="text-sm text-gray-600">
                   {e.date} · {e.time}
                 </div>
