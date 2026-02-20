@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { events } from "@/data/events"
+import SignupSection from "@/app/components/SignupSection"
 
 const categories = [
   {
@@ -18,6 +19,7 @@ const categories = [
 
 export default function HomePage() {
   return (
+    <>
     <main className="max-w-3xl mx-auto px-6 py-16">
       <h1 className="font-serif text-ps-heading text-5xl leading-tight">
         San Diego <em>Tech Scene</em>
@@ -52,5 +54,7 @@ export default function HomePage() {
         </div>
       </div>
     </main>
+    <SignupSection />
+    </>
   )
 }
