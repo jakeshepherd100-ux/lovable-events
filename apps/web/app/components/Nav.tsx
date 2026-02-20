@@ -10,6 +10,7 @@ export default function Nav() {
         <Link href="/" className="text-ps-nav-text/75 hover:text-ps-nav-text transition-colors">Home</Link>
         <Link href="/events" className="text-ps-nav-text/75 hover:text-ps-nav-text transition-colors">Events</Link>
         <Link href="/about" className="text-ps-nav-text/75 hover:text-ps-nav-text transition-colors">About</Link>
+        <Link href="/contact" className="text-ps-nav-text/75 hover:text-ps-nav-text transition-colors">Contact</Link>
         <Link
           href="/events"
           className="bg-ps-accent text-white px-4 py-1.5 rounded-full font-medium hover:opacity-90 transition-opacity"
