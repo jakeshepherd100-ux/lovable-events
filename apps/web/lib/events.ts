@@ -94,6 +94,17 @@ export async function getEventById(id: string): Promise<SupabaseEvent | null> {
   return data
 }
 
+export async function getUpcomingEventCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from("events")
+    .select("*", { count: "exact", head: true })
+    .eq("is_approved", true)
+    .gte("start_date", new Date().toISOString())
+
+  if (error) return 0
+  return count ?? 0
+}
+
 export async function upsertEvent(event: EventInput): Promise<SupabaseEvent | null> {
   const { data, error } = await supabase
     .from("events")

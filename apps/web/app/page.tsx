@@ -1,6 +1,8 @@
 import Link from "next/link"
-import { events } from "@/data/events"
+import { getUpcomingEventCount } from "@/lib/events"
 import SignupSection from "@/app/components/SignupSection"
+
+export const revalidate = 300 // refresh count every 5 minutes
 
 const categories = [
   {
@@ -17,7 +19,9 @@ const categories = [
   },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const eventCount = await getUpcomingEventCount()
+
   return (
     <>
     <main className="max-w-3xl mx-auto px-6 py-16">
@@ -33,7 +37,7 @@ export default function HomePage() {
           href="/events"
           className="inline-block bg-ps-primary text-white px-6 py-3 rounded-lg font-medium hover:bg-ps-primary-hover transition-all hover:-translate-y-0.5 hover:shadow-md"
         >
-          Browse {events.length} upcoming events →
+          Browse {eventCount} upcoming event{eventCount !== 1 ? "s" : ""} →
         </Link>
       </div>
 
